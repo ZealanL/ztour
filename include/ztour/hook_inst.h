@@ -62,6 +62,7 @@ namespace name { \
 		const auto __scope_guard = ztour::HookInst::ScopeGuard(_hook_inst); \
 		const struct { \
 			ztour::Ptr return_address = ZT_GET_RET_ADDR_PTR(); \
+			ztour::Ptr stack_base_ptr = ZT_GET_STACK_BASE_PTR(); \
 			FuncType call_original = (FuncType)_original_ptr.as_bytes_ptr(); \
 		} ctx_name; \
 		auto user_code = [&]() -> return_type body; \

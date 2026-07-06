@@ -12,6 +12,12 @@
 #define ZT_GET_RET_ADDR_PTR() __builtin_return_address(0)
 #endif
 
+#if ZT_IS_MSVC
+#define ZT_GET_STACK_BASE_PTR() _AddressOfReturnAddress()
+#else
+#define ZT_GET_STACK_BASE_PTR() __builtin_return_address(0)
+#endif
+
 #if ZT_IS_DEBUG
 #define ZT_DLOG(strify_args) { std::cout << "[DBG]: " << ZT_STRIFY(strify_args) << std::endl; }
 #else
