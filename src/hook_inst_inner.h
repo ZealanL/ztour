@@ -32,8 +32,8 @@ namespace ztour {
 		}
 
 		bool is_installed() const { return _is_installed; }
-		ZT_ISOLATE_SECTION void install();
-		ZT_ISOLATE_SECTION void uninstall();
+		void install();
+		void uninstall();
 
 		static Mutex<std::vector<HookInst *>>::Guard all_insts();
 	};

@@ -47,11 +47,11 @@ ______
   - `ctx.stack_base_ptr`
 - Thread-safe and recursion-compatible detour execution tracking
 - Automatic resolution of jump tables when hooking
+- Integrated pattern scanning of binary modules via `ztour::pattern_scan_module(...)`
 
 ## Planned features
 - More useful per-call information in `ctx`
 - Guaranteed-safe hook uninstallations via detour execution tracking
-- Integrated pattern scanning (maybe?)
 - Complete MacOS function-patching implementation
 
 _____

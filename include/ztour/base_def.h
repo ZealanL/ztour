@@ -65,13 +65,3 @@ static_assert(sizeof(void*) == ZT_PTR_SIZE, "Bad pointer size");
 #else
 #define ZT_NO_INLINE __attribute__((noinline))
 #endif
-
-// When modifying text sections, there's an annoying special case where the section we are modifying is the same
-// as the section we are executing, meaning we will crash because we set ourselves to read-write.
-// Separating special code-modifying functions into a different code section fixes this.auto
-#if defined(_MSC_VER)
-#pragma section(".ztcore", read, execute)
-#define ZT_ISOLATE_SECTION __declspec(allocate(".zttext")) ZT_NO_INLINE
-#else
-#define ZT_ISOLATE_SECTION __attribute__((section(".zttext"), aligned(4096))) ZT_NO_INLINE
-#endif

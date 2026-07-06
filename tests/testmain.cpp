@@ -1,10 +1,5 @@
 #include <ztour/ztour.h>
 
-void sleep(uint32_t ms) {
-	//ZT_DLOG("Sleeping for " << ms << "ms on thread " << std::this_thread::get_id());
-	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-}
-
 int ZT_CC_CDECL func_to_hook(int arg) {
 	std::cout << "Normal function called with arg: " << arg << std::endl;
 	return 0;
@@ -28,28 +23,34 @@ std::vector<uint8_t> get_cur_function_bytes() {
 	return std::vector(start_ptr.as_bytes_ptr(), end_ptr.as_bytes_ptr());
 }
 
-int main() {
+void test_pattern_scanning() {
+	const char* bytes_to_find = "\x45\x42\x31\x20\x59";
 
-	std::cout << "Starting thread..." << std::endl;
-	std::thread thread = std::thread(
-		[] {
-			while (true) {
-				func_to_hook(47);
-				sleep(500);
-			}
-		}
-	);
-	thread.detach();
+	std::cout << "Testing pattern scanning..." << std::endl;
+	std::cout << "Bytes to find: \"" << bytes_to_find << "\"" << std::endl; // Printing to ensure it is compiled
+	auto found_address_a = ztour::pattern_scan_module("ztour_test", "45 42 31 20 59");
+	auto found_address_b = ztour::pattern_scan_module("ztour_test", "?? 45 42 31 20 59 ??", 1);
+	auto found_address_c = ztour::pattern_scan_module("ztour_test", "45 42 31 ? 59");
+	ZT_ASSERT(found_address_a == bytes_to_find);
+	ZT_ASSERT(found_address_b == bytes_to_find);
+	ZT_ASSERT(found_address_c == bytes_to_find);
+}
 
+void test_hooking() {
 	auto hook_inst = ztour::find_hook_inst("test_hook");
 	hook_inst->change_target_func((void*)func_to_hook);
 
-	sleep(600);
+	func_to_hook(1);
 	std::cout << "Function bytes before: " << ZT_BYTES_TO_STR(get_cur_function_bytes()) << std::endl;
 	ztour::install_all_hooks();
+	func_to_hook(2);
 	std::cout << "Function bytes after: " << ZT_BYTES_TO_STR(get_cur_function_bytes()) << std::endl;
-	sleep(1000);
 	ztour::uninstall_all_hooks();
-	sleep(1000);
-	return 0;
+	func_to_hook(3);
+}
+
+int main() {
+	test_pattern_scanning();
+	test_hooking();
+	return EXIT_SUCCESS;
 }
