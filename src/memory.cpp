@@ -136,11 +136,11 @@ namespace ztour {
 #if ZT_IS_WINDOWS
 		return _aligned_malloc(size, alignment);
 #else
-		void* ptr = NULL;
+		void* ptr = nullptr;
 		if (posix_memalign(&ptr, alignment, size) == 0) {
 			return ptr;
 		} else {
-			return NULL;
+			return nullptr;
 		}
 #endif
 	}
@@ -166,6 +166,9 @@ namespace ztour {
 	}
 
 	Ptr memory::resolve_func_ptr(Ptr func_ptr) {
+		if (!func_ptr)
+			return nullptr;
+
 		constexpr uint8_t JMP_REL32_MNEMONIC = 0xE9;
 		constexpr size_t JMP_REL32_LEN = 5;
 		if (func_ptr.read<uint8_t>() == JMP_REL32_MNEMONIC) {

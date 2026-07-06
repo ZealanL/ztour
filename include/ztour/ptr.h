@@ -3,7 +3,7 @@
 #include <ztour/base.h>
 
 namespace ztour {
-	struct	Ptr {
+	struct Ptr {
 	private:
 		void* _ptr;
 	public:
@@ -30,6 +30,9 @@ namespace ztour {
 		}
 		bool operator!=(Ptr other) const {
 			return this->_ptr != other._ptr;
+		}
+		bool operator!() const {
+			return !this->_ptr;
 		}
 
 		Ptr operator+(Ptr other) const {

@@ -12,7 +12,7 @@ int ZT_CC_CDECL func_to_hook(int arg) {
 
 ZT_DEFINE_HOOK(
 	test_hook,
-	func_to_hook,
+	NULL,
 	int, ZT_CC_CDECL, (int arg), ctx, {
 		std::cout << "Detour called with arg " << arg << ", real return: " << ctx.return_address << std::endl;
 		ctx.call_original(0);
@@ -41,12 +41,15 @@ int main() {
 	);
 	thread.detach();
 
+	auto hook_inst = ztour::find_hook_inst("test_hook");
+	hook_inst->change_target_func((void*)func_to_hook);
+
 	sleep(600);
 	std::cout << "Function bytes before: " << ZT_BYTES_TO_STR(get_cur_function_bytes()) << std::endl;
 	ztour::install_all_hooks();
 	std::cout << "Function bytes after: " << ZT_BYTES_TO_STR(get_cur_function_bytes()) << std::endl;
 	sleep(1000);
-	ztour::remove_all_hooks();
+	ztour::uninstall_all_hooks();
 	sleep(1000);
 	return 0;
 }

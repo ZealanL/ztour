@@ -9,9 +9,9 @@ size_t set_all_hooks_installed(bool install) {
 	for (HookInst* inst : *insts) {
 		if (inst->is_installed() != install) {
 			if (install) {
-				inst->_inner->install();
+				inst->install();
 			} else {
-				inst->_inner->uninstall();
+				inst->uninstall();
 			}
 			num_changed++;
 		}
@@ -23,6 +23,18 @@ size_t ztour::install_all_hooks() {
 	return set_all_hooks_installed(true);
 }
 
-size_t ztour::remove_all_hooks() {
+size_t ztour::uninstall_all_hooks() {
 	return set_all_hooks_installed(false);
+}
+
+HookInst* ztour::find_hook_inst(const std::string &name) {
+	for (auto hook_inst : all_hook_insts())
+		if (hook_inst->name() == name)
+			return hook_inst;
+
+	return nullptr;
+}
+
+std::vector<HookInst*> ztour::all_hook_insts() {
+	return *HookInst::Inner::all_insts();
 }

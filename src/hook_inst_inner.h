@@ -20,10 +20,16 @@ namespace ztour {
 		Ptr code_enter_detour;
 		Ptr code_call_original;
 
+		Ptr* output_original_func;
+
 		MemPage code_page;
 
-		Inner(const std::string& name, Ptr target_func, Ptr detour_func);
+		Inner(const std::string &name, Ptr target_func, Ptr detour_func, Ptr *output_original_func);
 		~Inner();
+
+		bool has_target_func() const {
+			return target_func != nullptr;
+		}
 
 		bool is_installed() const { return _is_installed; }
 		ZT_ISOLATE_SECTION void install();

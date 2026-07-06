@@ -4,13 +4,22 @@
 #include "./decoder.h"
 
 namespace ztour {
-	HookInst::Inner::Inner(const std::string& name, Ptr target_func, Ptr detour_func) : name(name), code_page() {
+	HookInst::Inner::Inner(const std::string& name, Ptr target_func, Ptr detour_func, Ptr* output_original_func)
+	: name(name), code_page(), output_original_func(output_original_func) {
 		this->_is_installed = false;
+		ZT_ASSERT(name.length() > 0);
+		ZT_ASSERT(detour_func != nullptr);
+		ZT_ASSERT(output_original_func != nullptr);
 
 		target_func = memory::resolve_func_ptr(target_func);
 		detour_func = memory::resolve_func_ptr(detour_func);
 		this->target_func = target_func;
 		this->detour_func = detour_func;
+
+		if (!target_func) {
+			*output_original_func = nullptr;
+			return;
+		}
 
 		ZT_DLOG("Creating detour, target=" << target_func << ", detour=" << detour_func);
 
@@ -47,12 +56,18 @@ namespace ztour {
 		}
 
 		code_page.make_executable();
+
+		*output_original_func = code_call_original;
 	}
 
 	HookInst::Inner::~Inner() = default;
 
 	void HookInst::Inner::install() {
-		ZT_ASSERT(!_is_installed);
+		if (_is_installed)
+			ZT_THROW_ERR("Cannot install hook \"" << name << "\" (already installed)");
+
+		if (!has_target_func())
+			ZT_THROW_ERR("Cannot install hook \"" << name << "\" because no target function has been specified yet");
 
 		auto jmp_patch_bytes = Encoder().encode_rel_jmp(
 			this->target_func,
@@ -78,7 +93,9 @@ namespace ztour {
 	}
 
 	void HookInst::Inner::uninstall() {
-		ZT_ASSERT(_is_installed);
+		if (!_is_installed)
+			ZT_THROW_ERR("Cannot uninstall hook \"" << name << "\" (not installed)");
+
 		{
 			size_t patch_size = this->patched_original_bytes.size();
 			memory::overwrite_executable_mem(this->patched_original_bytes.data(), target_func, patch_size);
@@ -88,7 +105,8 @@ namespace ztour {
 		_is_installed = false;
 	}
 
-	Mutex<std::vector<HookInst *>>::Guard HookInst::Inner::all_insts() {
+	// TODO: Use map instead of vector for faster by-name lookups
+	Mutex<std::vector<HookInst*>>::Guard HookInst::Inner::all_insts() {
 		static auto g_hook_insts = Mutex<std::vector<HookInst*>>();
 		return g_hook_insts.lock();
 	}

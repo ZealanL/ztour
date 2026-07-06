@@ -7,16 +7,30 @@ namespace ztour {
 	struct HookInst {
 		struct Inner;
 	private:
-		HookInst(Inner* inner);
+
+		HookInst(std::unique_ptr<Inner> inner);
+		~HookInst();
 
 		HookInst(const HookInst& other) = delete;
 		HookInst& operator=(const HookInst& other) = delete;
-		~HookInst() = delete;
 
 	public:
-		Inner* _inner = nullptr; // For internal library use
+		std::unique_ptr<Inner> _inner; // For internal library use
+
+		/// Whether this hook has been actually initialized to hook a specific function
+		bool has_target_func() const;
 
 		bool is_installed() const;
+		std::string name() const;
+
+		/// Install the hook instance (throws an exception if already installed)
+		void install();
+
+		/// Uninstall the hook instance (throws an exception if not installed)
+		void uninstall();
+
+		/// Change the target function address of a hook (throws an exception if already installed)
+		void change_target_func(Ptr new_target_func_ptr);
 
 		struct ScopeGuard {
 		private:

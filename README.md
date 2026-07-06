@@ -35,15 +35,17 @@ ______
 
 ## Current features
 - Automatic initialization-time hook creation
+- Uninstall and reinstall specific hooks at any time
+- Change a hook's target functions after initializing a hook
+- Initialize a hook with an unknown target function (via passing `nullptr`)
 - Define hooks without having to write out the function signature more than once
 - Effortless original function calling via `ctx.call_original(...)`
-- Additional per-call information such as `ctx.return_address`
+- Additional per-call information such as:
+  - `ctx.return_address`
 - Thread-safe and recursion-compatible detour execution tracking
 - Automatic resolution of jump tables when hooking
 
 ## Planned features
-- Ability to manually define or late-initialize specific hooks
-- Ability to remove or re-add specific hooks
 - More useful per-call information in `ctx`
 - Guaranteed-safe hook uninstallations via detour execution tracking
 - Integrated pattern scanning (maybe?)
