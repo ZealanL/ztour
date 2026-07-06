@@ -39,7 +39,7 @@ ZT_DEFINE_HOOK(
 std::vector<uint8_t> get_cur_function_bytes() {
 	auto start_ptr = ztour::Ptr((void*)func_to_hook);
 	auto end_ptr = start_ptr + 0x30;
-	return std::vector(start_ptr.as_bytes_ptr(), end_ptr.as_bytes_ptr());
+	return std::vector<uint8_t>(start_ptr.as_bytes_ptr(), end_ptr.as_bytes_ptr());
 }
 
 void test_pattern_scanning() {

@@ -7,6 +7,7 @@
 #include <string>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 #include <sstream>
 #include <cstdlib>
 #include <thread>

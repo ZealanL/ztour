@@ -62,7 +62,7 @@ namespace name { \
 		&_original_ptr \
 	); \
 	return_type calling_convention outer_func args { \
-		const auto __scope_guard = ztour::HookInst::ScopeGuard(_hook_inst); \
+		const ztour::HookInst::ScopeGuard __scope_guard(_hook_inst); \
 		const struct { \
 			ztour::Ptr return_address = ZT_GET_RET_ADDR_PTR(); \
 			ztour::Ptr stack_base_ptr = ZT_GET_STACK_BASE_PTR(); \

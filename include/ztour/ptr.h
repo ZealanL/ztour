@@ -42,7 +42,7 @@ namespace ztour {
 			return *this = *this + other;
 		}
 
-		template<typename T, typename = std::enable_if<std::is_integral<T>::value, T>::type>
+		template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
 		T read() const {
 			return *(T*)(this->_ptr);
 		}
