@@ -32,6 +32,9 @@ namespace ztour {
 		/// Change the target function address of a hook (throws an exception if already installed)
 		void change_target_func(Ptr new_target_func_ptr);
 
+		/// Checks if this detour is being used by any thread
+		bool is_being_called() const;
+
 		struct ScopeGuard {
 		private:
 			HookInst* _inst;

@@ -2,6 +2,7 @@
 #include "./mem_page.h"
 #include <ztour/hook_inst.h>
 
+#include "atomic_call_gate.h"
 #include "mutex_holder.h"
 
 namespace ztour {
@@ -10,9 +11,11 @@ namespace ztour {
 		bool _is_installed;
 	public:
 		std::string name;
-		std::atomic<size_t> call_counter = 0;
 		Ptr target_func;
 		Ptr detour_func;
+
+		std::mutex access_mutex;
+		AtomicCallGate call_gate;
 
 		constexpr static size_t HOP_MEM_SIZE = 0x100;
 		std::vector<uint8_t> patched_original_bytes;

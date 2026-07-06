@@ -39,19 +39,25 @@ ______
 - Uninstall and reinstall specific hooks at any time
 - Acquire hook instances by name at any time
 - Change a hook's target functions after initializing a hook
-- Initialize a hook with an unknown target function (via passing `nullptr`)
+- Initialize a hook with an unknown target function
+  - *(You do this by passing `nullptr` as the target function)*
 - Define hooks without having to write out the function signature more than once
 - Effortless original function calling via `ctx.call_original(...)`
 - Useful per-call context information such as:
-  - `ctx.return_address`
-  - `ctx.stack_base_ptr`
+  - `ctx.return_address` - Actual return address from the original function call (undisturbed by wrapping functions)
+  - `ctx.stack_base_ptr` - Base pointer of the stack frame (again, ignoring wrapping functions)
 - Thread-safe and recursion-compatible detour execution tracking
+  - *(See `ztour::HookInst` implementation)*
 - Automatic resolution of jump tables when hooking
+  - *I.e. if you give a function pointer that actually points to a jump table, the library will resolve the real function address automatically and hook that underlying function*
 - Integrated pattern scanning of binary modules via `ztour::pattern_scan_module(...)`
-
+  - *Works on both Windows and Linux, and should be so fast it's irrelevant*
+- Guaranteed-safe blocking hook removal (waits for hook to be unused during removal)
+  - *This should prevent obnoxious crashes when unloading a module that was using detour hooks*
+- Automatic "RIP-relative" instruction relocations for cloned function heads 
+  - *This fixes issues where functions with RIP-relative instructions near the start are corrupted when detour libraries move the first few instructions to a new location*
+  - *(See `ztour::relocations` implementation)*
 ## Planned features
-- More useful per-call information in `ctx`
-- Guaranteed-safe hook uninstallations via detour execution tracking
 - Complete MacOS function-patching implementation
 
 _____

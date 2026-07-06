@@ -39,12 +39,16 @@ namespace ztour {
 			_inner->name, new_target_func_ptr, _inner->detour_func, _inner->output_original_func);
 	}
 
+	bool HookInst::is_being_called() const {
+		return _inner->call_gate.num_active() > 0;
+	}
+
 	HookInst::ScopeGuard::ScopeGuard(HookInst *inst) : _inst(inst) {
-		_inst->_inner->call_counter++;
+		_inst->_inner->call_gate.on_enter_call();
 	}
 
 	HookInst::ScopeGuard::~ScopeGuard() {
-		_inst->_inner->call_counter--;
+		_inst->_inner->call_gate.on_exit_call();
 	}
 
 	HookInst* HookInst::_create(const std::string& name, Ptr target_func, Ptr detour_func, Ptr* output_original_func) {

@@ -9,6 +9,8 @@ namespace ztour {
 	/// Installs all uninstalled hook instances, returning the number installed
 	size_t install_all_hooks();
 	/// Uninstalls all installed hook instances, returning the number uninstalled
+	///
+	/// Notably, this function blocks until all detour functions finish running
 	size_t uninstall_all_hooks();
 
 	/// Returns null if no hook matched the name

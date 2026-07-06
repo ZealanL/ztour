@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <mutex>
+#include <condition_variable>
 #include <sstream>
 #include <cstdlib>
 #include <thread>

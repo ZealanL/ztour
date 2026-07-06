@@ -2,10 +2,11 @@
 #include "./memory.h"
 #include "./encoder.h"
 #include "./decoder.h"
+#include "relocation.h"
 
 namespace ztour {
 	HookInst::Inner::Inner(const std::string& name, Ptr target_func, Ptr detour_func, Ptr* output_original_func)
-	: name(name), code_page(), output_original_func(output_original_func) {
+	: name(name), code_page(), call_gate(), access_mutex(), output_original_func(output_original_func) {
 		this->_is_installed = false;
 		ZT_ASSERT(name.length() > 0);
 		ZT_ASSERT(detour_func != nullptr);
@@ -34,14 +35,18 @@ namespace ztour {
 			while (patch_length < Encoder::REL_JMP_SIZE)
 				patch_length += decoder.decode_instruction_length(target_func_bytes + patch_length);
 			this->patched_original_bytes = memory::read_bytes_vec(target_func_bytes, patch_length);
+
 			ZT_DLOG("To-patch function bytes: " << ZT_BYTES_TO_STR(this->patched_original_bytes));
 		}
 
 		// Copy original function bytes we will patch over
 		{
-			this->code_call_original = code_page.write_bytes(this->patched_original_bytes);
+			auto to_reloc_addr = code_page.next_write_ptr();
+			auto reloc_inst_bytes = relocation::relocate_code(this->patched_original_bytes, target_func_bytes, to_reloc_addr);
+			this->code_call_original = code_page.write_bytes(reloc_inst_bytes);
+
 			// Add on a jmp back to the unpatched rest of the function
-			this->code_call_original = code_page.write_bytes(
+			code_page.write_bytes(
 				Encoder().encode_pure_jmp(target_func_bytes + this->patched_original_bytes.size()).bytes
 			);
 		}
@@ -63,6 +68,8 @@ namespace ztour {
 	HookInst::Inner::~Inner() = default;
 
 	void HookInst::Inner::install() {
+		auto access_lock = std::unique_lock(access_mutex);
+
 		if (_is_installed)
 			ZT_THROW_ERR("Cannot install hook \"" << name << "\" (already installed)");
 
@@ -93,15 +100,23 @@ namespace ztour {
 	}
 
 	void HookInst::Inner::uninstall() {
+		auto access_lock = std::unique_lock(access_mutex);
+
 		if (!_is_installed)
 			ZT_THROW_ERR("Cannot uninstall hook \"" << name << "\" (not installed)");
-
 		{
 			size_t patch_size = this->patched_original_bytes.size();
 			memory::overwrite_executable_mem(this->patched_original_bytes.data(), target_func, patch_size);
 			ZT_DLOG("Unpatched: " << ZT_BYTES_TO_STR(this->patched_original_bytes));
 		}
 		ZT_DLOG("Uninstalled hook (" << target_func << " -> " << detour_func << ")");
+
+		if (call_gate.num_active() > 0) {
+			ZT_DLOG(" > (Hook is actively being called, waiting...)")
+			call_gate.wait();
+			ZT_DLOG(" > Done!")
+		}
+
 		_is_installed = false;
 	}
 

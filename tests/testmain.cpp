@@ -1,10 +1,15 @@
 #include <ztour/ztour.h>
 
+void sleep(int ms) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+/////////////////////
+
 int ZT_CC_CDECL func_to_hook(int arg) {
 	std::cout << "Normal function called with arg: " << arg << std::endl;
 	return 0;
 }
-
 ZT_DEFINE_HOOK(
 	test_hook,
 	NULL,
@@ -14,6 +19,20 @@ ZT_DEFINE_HOOK(
 		return 0;
 	}
 );
+
+void ZT_CC_CDECL func_to_hook_slow() {
+	std::cout << "Slow function called, being slow..." << std::endl;
+	sleep(500);
+	std::cout << " > Done being slow!" << std::endl;
+}
+ZT_DEFINE_HOOK(
+	test_hook_slow,
+	func_to_hook_slow,
+	void, ZT_CC_CDECL, (), ctx, {
+		ctx.call_original();
+	}
+);
+
 
 ///////////////////////////////////
 
@@ -36,21 +55,33 @@ void test_pattern_scanning() {
 	ZT_ASSERT(found_address_c == bytes_to_find);
 }
 
-void test_hooking() {
+void test_basic_hooking() {
 	auto hook_inst = ztour::find_hook_inst("test_hook");
 	hook_inst->change_target_func((void*)func_to_hook);
 
 	func_to_hook(1);
 	std::cout << "Function bytes before: " << ZT_BYTES_TO_STR(get_cur_function_bytes()) << std::endl;
-	ztour::install_all_hooks();
+	hook_inst->install();
 	func_to_hook(2);
 	std::cout << "Function bytes after: " << ZT_BYTES_TO_STR(get_cur_function_bytes()) << std::endl;
-	ztour::uninstall_all_hooks();
+	hook_inst->uninstall();
 	func_to_hook(3);
 }
 
+void test_safe_unhooking() {
+	auto hook_inst = ztour::find_hook_inst("test_hook_slow");
+	hook_inst->install();
+	auto thread_1 = std::thread(func_to_hook_slow);
+	auto thread_2 = std::thread(func_to_hook_slow);
+	sleep(100);
+	hook_inst->uninstall();
+	func_to_hook_slow();
+	std::cout << "Safe hooking works!" << std::endl;
+}
+
 int main() {
-	test_pattern_scanning();
-	test_hooking();
+	//test_pattern_scanning();
+	//test_basic_hooking();
+	test_safe_unhooking();
 	return EXIT_SUCCESS;
 }

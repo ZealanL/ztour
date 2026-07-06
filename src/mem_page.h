@@ -18,6 +18,10 @@ namespace ztour {
 		void make_writable();
 		void make_executable();
 
+		Ptr next_write_ptr() const {
+			return _memory + _write_offset;
+		}
+
 		// Returs the base address of where the `base` bytes ended up
 		Ptr write_bytes(Ptr base, size_t num);
 		Ptr write_bytes(const std::vector<uint8_t>& bytes) {
