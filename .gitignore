@@ -1,2 +1,5 @@
 ___*
 /.idea
+/.vs
+/out/build
+.editorconfig
