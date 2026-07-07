@@ -1,6 +1,6 @@
-#include "../relocation.h"
+#include "./relocation.h"
 
-#include "../decoder.h"
+#include "./decoder.h"
 
 template <typename T>
 void ensure_displacement_reloc_bounds(int64_t displacement) {
@@ -27,7 +27,7 @@ std::vector<uint8_t> ztour::relocation::relocate_code(const std::vector<uint8_t>
         Ptr remote_address_from = from_base + offset;
         Ptr remote_address_to = to_base + offset;
         auto ins = decoder.disassemble_instruction(ins_og_ptr, max_len, remote_address_from);
-        auto ins_bytes = std::vector(ins_og_ptr, ins_og_ptr + ins.info.length);
+        auto ins_bytes = std::vector<uint8_t>(ins_og_ptr, ins_og_ptr + ins.info.length);
         for (int i = 0; i < ins.info.operand_count; ++i) {
             auto& operand = ins.operands[i];
             bool is_rip_rel = operand.type == ZYDIS_OPERAND_TYPE_MEMORY && operand.mem.base == ZYDIS_REGISTER_RIP;
@@ -57,17 +57,17 @@ std::vector<uint8_t> ztour::relocation::relocate_code(const std::vector<uint8_t>
                     void* imm_ptr = ins_bytes.data() + ins.info.raw.imm[imm_idx].offset;
                     uint8_t imm_size_bits = ins.info.raw.imm[imm_idx].size;
                     switch (imm_size_bits) {
-                        case 32:
-                            ensure_displacement_reloc_bounds<int32_t>(new_disp);
-                            *(int32_t*)imm_ptr = (int32_t)new_disp;
-                        case 16:
-                            ensure_displacement_reloc_bounds<int16_t>(new_disp);
-                            *(int16_t*)imm_ptr = (int16_t)new_disp;
-                        case 8:
-                            ensure_displacement_reloc_bounds<int8_t>(new_disp);
-                            *(int8_t*)imm_ptr = (int8_t)new_disp;
-                        default:
-                            ZT_THROW_ERR("Encountered weird immediate size: " << imm_size_bits);
+                    case 32:
+                        ensure_displacement_reloc_bounds<int32_t>(new_disp);
+                        *(int32_t*)imm_ptr = (int32_t)new_disp;
+                    case 16:
+                        ensure_displacement_reloc_bounds<int16_t>(new_disp);
+                        *(int16_t*)imm_ptr = (int16_t)new_disp;
+                    case 8:
+                        ensure_displacement_reloc_bounds<int8_t>(new_disp);
+                        *(int8_t*)imm_ptr = (int8_t)new_disp;
+                    default:
+                        ZT_THROW_ERR("Encountered weird immediate size: " << imm_size_bits);
                     }
                 }
             }

@@ -2,7 +2,7 @@
 #include "./memory.h"
 #include "./encoder.h"
 #include "./decoder.h"
-#include "relocation.h"
+#include "./relocation.h"
 
 namespace ztour {
     HookInst::Inner::Inner(const std::string& name, Ptr target_func, Ptr detour_func, Ptr* output_original_func)
@@ -69,7 +69,7 @@ namespace ztour {
     HookInst::Inner::~Inner() = default;
 
     void HookInst::Inner::install() {
-        auto access_lock = std::unique_lock(access_mutex);
+        auto access_lock = std::unique_lock<std::mutex>(access_mutex);
 
         if (_is_installed)
             ZT_THROW_ERR("Cannot install hook \"" << name << "\" (already installed)");
@@ -101,7 +101,7 @@ namespace ztour {
     }
 
     void HookInst::Inner::uninstall() {
-        auto access_lock = std::unique_lock(access_mutex);
+        auto access_lock = std::unique_lock<std::mutex>(access_mutex);
 
         if (!_is_installed)
             ZT_THROW_ERR("Cannot uninstall hook \"" << name << "\" (not installed)");
@@ -123,7 +123,7 @@ namespace ztour {
 
     // TODO: Use map instead of vector for faster by-name lookups
     Mutex<std::vector<HookInst*>>::Guard HookInst::Inner::all_insts() {
-        static auto g_hook_insts = Mutex<std::vector<HookInst*>>();
+        static Mutex<std::vector<HookInst*>> g_hook_insts{};
         return g_hook_insts.lock();
     }
 }

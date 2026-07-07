@@ -18,17 +18,18 @@ public:
     void on_exit_call() {
         size_t remaining = num_active_calls.fetch_sub(1, std::memory_order_acq_rel) - 1;
         if (remaining == 0) {
-            auto lock = std::unique_lock(cond_mutex);
+            auto lock = std::unique_lock<std::mutex>(cond_mutex);
             cond_var.notify_all();
         }
     }
 
     // Wait until there are no active calls
     void wait() {
-        auto lock = std::unique_lock(cond_mutex);
+        auto lock = std::unique_lock<std::mutex>(cond_mutex);
         cond_var.wait(lock, [this] {
             return num_active_calls.load(std::memory_order_acquire) == 0;
-        });
+            }
+        );
     }
 
     size_t num_active() const {

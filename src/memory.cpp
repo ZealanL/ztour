@@ -114,7 +114,7 @@ namespace ztour {
     }
 
     std::vector<uint8_t> memory::read_bytes_vec(Ptr addr, size_t size) {
-        return std::vector(addr.as_bytes_ptr(), (addr + size).as_bytes_ptr());
+        return std::vector<uint8_t>(addr.as_bytes_ptr(), (addr + size).as_bytes_ptr());
     }
 
     Ptr memory::try_alloc_page_at(Ptr exact_addr) {
