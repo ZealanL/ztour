@@ -2,6 +2,7 @@
 
 #if ZT_IS_WINDOWS
 #define _WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <TlHelp32.h>
 #else
@@ -114,6 +115,75 @@ namespace ztour {
 
     std::vector<uint8_t> memory::read_bytes_vec(Ptr addr, size_t size) {
         return std::vector(addr.as_bytes_ptr(), (addr + size).as_bytes_ptr());
+    }
+
+    Ptr memory::try_alloc_page_at(Ptr exact_addr) {
+        auto page_size = memory::page_size();
+
+#if ZT_IS_WINDOWS
+        return VirtualAlloc(
+            exact_addr.as_bytes_ptr(),
+            page_size,
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE
+        );
+#else
+        void* result = mmap(
+            exact_addr.as_bytes_ptr(),
+            page_size,
+            PROT_READ | PROT_WRITE,
+            MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE,
+            -1, 0
+        );
+
+        if (result != MAP_FAILED) {
+            return result;
+        } else {
+            return nullptr;
+        }
+#endif
+    }
+
+    Ptr memory::alloc_page_near(Ptr near_ptr) {
+        ZT_ASSERT(near_ptr != nullptr);
+        ZT_DLOG("Finding page near " << near_ptr << "...");
+
+        size_t page_size = memory::page_size();
+
+        uintptr_t base = near_ptr.as_addr();
+        uintptr_t aligned_base = base & ~(page_size - 1);
+
+        constexpr uintptr_t MAX_SEARCH_DIST = 1'000'000'000; // 1GB
+        uintptr_t max_step_size_factor = 100;
+        for (uintptr_t cur_search_dist = 0, iter = 0; cur_search_dist < MAX_SEARCH_DIST; iter++) {
+            for (int is_above = 0; is_above < 2; is_above++) {
+                uintptr_t target;
+                if (is_above) {
+                    target = aligned_base + cur_search_dist;
+                    if (target < aligned_base) // Detect overflow
+                        continue;
+                } else {
+                    target = aligned_base - cur_search_dist;
+                    if (target > aligned_base)
+                        continue;
+                }
+                Ptr alloc_ptr = try_alloc_page_at(target);
+                if (alloc_ptr != nullptr) {
+                    ZT_DLOG(" > Found at " << alloc_ptr << ", dist: " << ZT_HEXSTR(cur_search_dist));
+                    return alloc_ptr;
+                }
+            }
+
+            // Search with bigger and bigger steps exponentially (to a fixed limit)
+            uintptr_t cur_step_size_exponent = std::min(iter / 100, uintptr_t(16));
+            uintptr_t cur_step_size_factor = std::min(uintptr_t(1) << cur_step_size_exponent, max_step_size_factor);
+            uintptr_t cur_step_size = page_size * cur_step_size_factor;
+            ZT_ASSERT((cur_step_size % page_size) == 0 && cur_step_size >= page_size);
+            cur_search_dist += cur_step_size;
+        }
+
+        ZT_THROW_ERR("Failed to allocate memory near " << aligned_base);
+        return nullptr;
     }
 
     Ptr memory::alloc(size_t size, size_t alignment) {
