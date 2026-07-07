@@ -7,7 +7,7 @@
 #endif
 
 #if ZT_IS_MSVC
-#define ZT_GET_RET_ADDR_PTR() __ReturnAddress()
+#define ZT_GET_RET_ADDR_PTR() _ReturnAddress()
 #else
 #define ZT_GET_RET_ADDR_PTR() __builtin_return_address(0)
 #endif

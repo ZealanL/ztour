@@ -33,7 +33,7 @@ namespace ztour {
         uintptr_t aligned_addr = addr & ~(page_size - 1);
         size_t aligned_size = size + (addr - aligned_addr);
         int prot = executable ? (PROT_READ | PROT_EXEC) : (PROT_READ | PROT_WRITE);
-        mprotect((void *) aligned_addr, aligned_size, prot);
+        mprotect((void*)aligned_addr, aligned_size, prot);
 #endif
     }
 
@@ -67,17 +67,17 @@ namespace ztour {
         // Use WriteProcesMemory to not have to worry about page protections
 
         HANDLE process_handle = GetCurrentProcess();
-        size_t out_bytes_written = 0;
+        size_t bytes_written = 0;
         bool success = WriteProcessMemory(
             process_handle,
             to.as_bytes_ptr(), // Destination address to overwrite
             from.as_bytes_ptr(), // Source buffer containing the JMP/detour
             size, // Number of bytes to write
-            &out_bytes_written // Out variable to verify the write count
+            &bytes_written // Out variable to verify the write count
         );
 
-        if (!success || bytes_written != patch_size) {
-            ZT_THROW_ERR("Failed to write " << ZT_HEXSTR(size) << " [" << from << "->" << to << "]");
+        if (!success || bytes_written != size) {
+            ZT_THROW_ERR("Failed to write " << ZT_HEXSTR(size) << " bytes [" << from << "->" << to << "]");
         }
 
         // TODO: may be unnecessary
@@ -91,7 +91,7 @@ namespace ztour {
         if (self_mem_file == -1)
             ZT_THROW_ERR("Failed to open own memory file");
 
-        if (lseek64(self_mem_file, (off64_t) to.as_addr(), SEEK_SET) == -1) {
+        if (lseek64(self_mem_file, (off64_t)to.as_addr(), SEEK_SET) == -1) {
             close(self_mem_file);
             ZT_THROW_ERR("Failed to seek to target virtual address in own memory file");
         }
@@ -101,7 +101,7 @@ namespace ztour {
 
         if (bytes_written != size) {
             ZT_THROW_ERR(
-                "Failed to write " << ZT_HEXSTR(size) << " [" << from << "->" << to << "]" <<
+                "Failed to write " << ZT_HEXSTR(size) << " bytes [" << from << "->" << to << "]" <<
                 " (written: " << ZT_HEXSTR(bytes_written) << ")");
         }
 
@@ -125,9 +125,9 @@ namespace ztour {
         constexpr size_t ALLOC_LIMIT = 0x10000;
         if (size > ALLOC_LIMIT)
             ZT_THROW_ERR(
-            "Cannot allocate over " << ZT_HEXSTR(ALLOC_LIMIT) << " bytes at a time"
-            << " (tried " << ZT_HEXSTR(size) << ")"
-        );
+                "Cannot allocate over " << ZT_HEXSTR(ALLOC_LIMIT) << " bytes at a time"
+                << " (tried " << ZT_HEXSTR(size) << ")"
+            );
 
         if (alignment <= 1)
             return std::malloc(size);
@@ -135,7 +135,7 @@ namespace ztour {
 #if ZT_IS_WINDOWS
         return _aligned_malloc(size, alignment);
 #else
-        void *ptr = nullptr;
+        void* ptr = nullptr;
         if (posix_memalign(&ptr, alignment, size) == 0) {
             return ptr;
         } else {
@@ -160,7 +160,7 @@ namespace ztour {
         return mem;
     }
 
-    Ptr memory::executable_mem_from_bytes(const std::vector<uint8_t> &bytes) {
+    Ptr memory::executable_mem_from_bytes(const std::vector<uint8_t>& bytes) {
         return executable_mem_from_bytes(bytes.data(), bytes.size());
     }
 
@@ -182,7 +182,7 @@ namespace ztour {
 
     std::vector<memory::MemoryRegion> memory::get_module_bin_regions(const std::string& module_name) {
 #if ZT_IS_WINDOWS
-        HMODULE mod = GetModuleHandleA(module_name);
+        HMODULE mod = GetModuleHandleA(module_name.c_str());
         if (!mod)
             ZT_THROW_ERR("Failed to find module \"" << module_name << "\"");
 
@@ -190,7 +190,6 @@ namespace ztour {
         auto nt_headers = (PIMAGE_NT_HEADERS)((uint8_t*)mod + dos_header->e_lfanew);
         size_t size_of_image = nt_headers->OptionalHeader.SizeOfImage;
         return { MemoryRegion(dos_header, size_of_image) };
-#error TODO
 #else
 #if ZT_IS_LINUX
         std::vector<MemoryRegion> regions = {};
@@ -289,7 +288,7 @@ namespace ztour {
 
         uint8_t first_valid_byte = pattern[leading_wildcards];
 
-        Ptr cur_start_pos = (region.base+ leading_wildcards);
+        Ptr cur_start_pos = (region.base + leading_wildcards);
         size_t remaining_size = region.size - leading_wildcards;
         size_t min_size = pattern.size() - leading_wildcards;
         while (remaining_size >= min_size) {
@@ -299,7 +298,7 @@ namespace ztour {
 
             { // Check pattern
                 bool matches = true;
-                for (size_t i = leading_wildcards + 1, j = 1; i < pattern.size(); i++,j++) {
+                for (size_t i = leading_wildcards + 1, j = 1; i < pattern.size(); i++, j++) {
                     if (pattern[i] == -1) continue;
                     if (pattern[i] != next_possible_base.as_bytes_ptr()[j]) {
                         matches = false;
