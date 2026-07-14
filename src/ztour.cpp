@@ -28,7 +28,7 @@ size_t ztour::uninstall_all_hooks() {
 	return set_all_hooks_installed(false);
 }
 
-HookInst* ztour::find_hook_inst(const std::string &name) {
+HookInst* ztour::find_hook_inst(const std::string& name) {
 	for (auto hook_inst : all_hook_insts())
 		if (hook_inst->name() == name)
 			return hook_inst;
@@ -40,15 +40,25 @@ std::vector<HookInst*> ztour::all_hook_insts() {
 	return *HookInst::Inner::all_insts();
 }
 
-Ptr ztour::pattern_scan_module(const std::string &module_name, const std::string &pattern_str, int32_t offset) {
+std::vector<Ptr> ztour::pattern_scan_module_multi(const std::string& module_name, const std::string& pattern_str, int32_t offset) {
+	std::vector<Ptr> results = {};
 	auto regions = memory::get_module_bin_regions(module_name);
 	auto signed_pattern = memory::parse_pattern_str(pattern_str);
 	for (auto region : regions) {
-		Ptr found_addr = memory::signed_pattern_scan_region(region, signed_pattern);
-		if (found_addr != nullptr) {
-			return found_addr.as_addr() + offset;
-		}
+		auto new_results = memory::signed_pattern_scan_region(region, signed_pattern);
+		for (Ptr found_ptr : new_results)
+			results.push_back(found_ptr + offset);
 	}
 
-	return nullptr;
+	return results;
+}
+
+Ptr ztour::pattern_scan_module(const std::string& module_name, const std::string& pattern_str, int32_t offset) {
+	auto results = ztour::pattern_scan_module_multi(module_name, pattern_str, offset);
+	if (results.size() > 1) {
+		ZT_THROW_ERR("Found multiple results (" << results.size() << ") for pattern \"" << pattern_str << "\"");
+	} else if (results.empty()) {
+		ZT_THROW_ERR("Failed to find pattern \"" << pattern_str << "\"");
+	}
+	return results[0];
 }

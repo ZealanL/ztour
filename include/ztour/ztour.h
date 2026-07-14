@@ -19,11 +19,13 @@ namespace ztour {
 	/// Returns every registered hook instance
 	std::vector<HookInst*> all_hook_insts();
 
-	/// Pattern scans a specific module in the current process,
-	/// given an IDA-style byte pattern (e.g. "55 8B EC ? 24 84 ? ? 0F").
+	/// Pattern scans a specific module in the current process, given an IDA-style byte pattern (e.g. "55 8B EC ? 24 84 ? ? 0F").
 	///
-	/// Returns null if the pattern was not found.
+	/// Returns all addresses that matched the pattern
+	std::vector<Ptr> pattern_scan_module_multi(const std::string& module_name, const std::string& pattern_str, int32_t offset = 0);
+
+	/// Pattern scans a specific module in the current process, given an IDA-style byte pattern (e.g. "55 8B EC ? 24 84 ? ? 0F").
 	///
-	/// executable_only: Only search executable memory sections
+	/// Returns the one address matching the pattern, otherwise throws an exception if there were zero or multiple matches
 	Ptr pattern_scan_module(const std::string& module_name, const std::string& pattern_str, int32_t offset = 0);
 }

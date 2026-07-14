@@ -3,3 +3,4 @@ ___*
 /.vs
 /out/build
 .editorconfig
+CMakeSettings.json
